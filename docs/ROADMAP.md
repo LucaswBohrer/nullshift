@@ -22,7 +22,10 @@ GATE 4 — Vertical slice approved ......... DONE (2026-10-02, APPROVED WITH CON
   condition discharged by playtest, see docs/PLAYTEST_GATE4.md)
 GATE 4.5 — Creative direction + delta .... DONE (2026-10-02, design only —
   D016/D017/D018 PROPOSED, awaiting Lucas's approval before implementation)
-GATE 5 — Core systems complete ........... PENDING (blocked on D016–D018 approval)
+GATE 5 — Core systems complete ........... IN PROGRESS — checkpoint 1 DONE (2026-10-02):
+  WAKE→SERVICE→POWER playable (rooms 1.1/1.2/hub/power/relay); D016–D018
+  implemented+tested; 62 tests green; awaiting human review before
+  expanding to the remaining v1.0 rooms
 GATE 5 — Core systems complete ........... PENDING (hazards, devices, audio, save impl)
 GATE 6 — Content complete (12 rooms) ..... PENDING
 GATE 7 — QA complete ..................... PENDING
