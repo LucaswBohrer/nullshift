@@ -20,11 +20,16 @@ T = config.TILE
 
 
 class World:
-    def __init__(self, data: dict):
+    def __init__(self, data: dict, progression=None):
         self.data = data
         self.room_id = data["id"]
         self.w = data["grid"]["w"]
         self.h = data["grid"]["h"]
+        # D016: read-only view of persistent progression (exit gates only).
+        # The sim never writes it.
+        self.progression = progression
+        # D017: TEMPORAL terminal texts, set by Game at room entry.
+        self.terminal_texts = {}
 
         self.devices = {}
         for d in data.get("devices", []):
@@ -35,9 +40,7 @@ class World:
         self.doors = [d for d in self.devices.values() if isinstance(d, Door)]
         self.terminals = [d for d in data.get("terminals", [])]
 
-        ex = data["exit"]
-        self.exit = ExitPad(ex, ex["next"])
-        self.exit_rect = self.exit.rect
+        self.exits = [ExitPad(ex, ex["next"]) for ex in rooms.get_exits(data)]
 
         self.hazards = [make_hazard(hz) for hz in data.get("hazards", [])]
         self.projectiles = []
@@ -136,8 +139,15 @@ class World:
                     # event index = frame index this tick will record
                     self.rec.events.append((len(self.rec.frames), dev.id))
                     events.append("interact")
+                    # D016: persistent flag on PLAYER rising edge only.
+                    # Echo re-fires (below) never set flags (D017 invariant).
+                    if dev.sets_flag and dev.on and all(
+                            isinstance(self.devices.get(r), Console)
+                            and self.devices[r].on for r in dev.requires_on):
+                        events.append(("flag_set", dev.sets_flag))
                 else:  # terminal dict
-                    events.append(("terminal", dev["text"]))
+                    text = self.terminal_texts.get(dev["id"], dev["text"])
+                    events.append(("terminal", text))
         # 3. echoes
         for echo in list(self.echoes):
             if not echo.update(self, events):
@@ -160,10 +170,11 @@ class World:
         # 6. death
         if self._death_pending:
             return self._do_reset("death", events)
-        # 7. exit (player only) — immediate on overlap; echoes never trigger
-        if (self.player.rect.colliderect(self.exit_rect)):
-            events.append(("exit", self.exit.next_room))
-            return events
+        # 7. exit pads (player only; echoes never trigger; locked pads inert)
+        for pad in self.exits:
+            if pad.unlocked(self.progression) and self.player.rect.colliderect(pad.rect):
+                events.append(("exit", pad.next_room))
+                return events
         # 8. record frame
         self.rec.frames.append((self.player.x, self.player.y, self.player.facing))
         return events

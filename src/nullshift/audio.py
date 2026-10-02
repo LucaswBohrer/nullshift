@@ -6,6 +6,7 @@ from nullshift import synth
 _available = False
 _sounds = {}
 _muted = False
+_hum_channel = None
 
 
 def init() -> bool:
@@ -36,8 +37,27 @@ def play(name: str) -> None:
 def toggle_mute() -> bool:
     global _muted
     _muted = not _muted
+    if _muted:
+        stop_hum()
     return _muted
 
 
 def muted() -> bool:
     return _muted
+
+
+def start_hum() -> None:
+    """Start the looping electrical hum (idempotent)."""
+    global _hum_channel
+    if _available and not _muted and "hum" in _sounds and _hum_channel is None:
+        ch = pygame.mixer.find_channel()
+        if ch is not None:
+            ch.play(_sounds["hum"], loops=-1)
+            _hum_channel = ch
+
+
+def stop_hum() -> None:
+    global _hum_channel
+    if _hum_channel is not None:
+        _hum_channel.stop()
+        _hum_channel = None

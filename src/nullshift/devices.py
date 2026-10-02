@@ -45,6 +45,10 @@ class Console(Device):
     def __init__(self, d: dict):
         super().__init__(d)
         self.on = False
+        # D016: optional persistent flag set on PLAYER rising edge only.
+        # Echoes re-firing this console never set the flag (D017 invariant).
+        self.sets_flag = d.get("sets_flag")
+        self.requires_on = list(d.get("requires_on", []))
 
     def toggle(self):
         self.on = not self.on
@@ -101,8 +105,15 @@ class ExitPad(Device):
 
     def __init__(self, d: dict, next_room: str):
         # d here is the exit dict (no 'id'/'type' required); synthesize them.
-        super().__init__({"id": "exit", "tx": d["tx"], "ty": d["ty"]})
+        super().__init__({"id": d.get("id", "exit"), "tx": d["tx"], "ty": d["ty"]})
         self.next_room = next_room
+        # D016: optional persistent-flag gate, e.g. {"power_restored": True}
+        self.requires = dict(d.get("requires", {}))
+
+    def unlocked(self, progression) -> bool:
+        if progression is None:
+            return not self.requires
+        return all(progression.get_flag(f) == want for f, want in self.requires.items())
 
 
 class Terminal(Device):

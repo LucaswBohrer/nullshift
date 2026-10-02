@@ -53,6 +53,18 @@ def _mix(*bufs) -> array.array:
     return out
 
 
+def _hum_loop() -> array.array:
+    """Seamless 1 s electrical hum (no decay envelope — loops cleanly)."""
+    dur = 1.0
+    buf = _buffer(dur)
+    n = len(buf)
+    for i in range(n):
+        t = i / SAMPLE_RATE
+        v = math.sin(2 * math.pi * 50 * t) * 0.5 + math.sin(2 * math.pi * 100 * t) * 0.25
+        buf[i] = int(v * 0.22 * 32767)
+    return buf
+
+
 SPECS = {
     "interact": lambda: _tone(880, 0.07, 0.35),
     "console": lambda: _tone(660, 0.12, 0.35, slide_to=990),
@@ -66,6 +78,10 @@ SPECS = {
     "room_complete": lambda: _mix(_tone(523, 0.12, 0.35), _tone(784, 0.2, 0.35)),
     "turret_charge": lambda: _tone(200, 0.35, 0.3, slide_to=700),
     "turret_shot": lambda: _tone(900, 0.12, 0.35, kind="saw", slide_to=200),
+    "step": lambda: _noise(0.05, 0.22),
+    "flag_set": lambda: _mix(_tone(523, 0.10, 0.35), _tone(784, 0.15, 0.35),
+                             _tone(1046, 0.25, 0.35)),
+    "hum": _hum_loop,
 }
 
 

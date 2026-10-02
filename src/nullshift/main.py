@@ -16,6 +16,7 @@ AUDIO_EVENTS = {
     "start": "ui",
     "pause": "ui",
     "unpause": "ui",
+    "flag_set": "flag_set",
 }
 
 
@@ -39,6 +40,8 @@ def run_game():
     debug = Debug()
     clock = pygame.time.Clock()
     flash = 0.0
+    step_cd = 0
+    last_room = None
 
     running = True
     acc = 0.0
@@ -82,6 +85,20 @@ def run_game():
         if n == 3:
             acc = 0.0  # drop time, never spiral
         flash = max(0.0, flash - 0.06)
+        # footsteps (presentation only)
+        step_cd -= 1
+        if (game.state == "PLAYING" and step_cd <= 0
+                and any(actions.get(m) for m in ("left", "right", "up", "down"))):
+            audio.play("step")
+            step_cd = 16
+        # electrical hum follows TEMPORAL lighting (rooms at normal power)
+        rid = game.world.room_id if game.world else None
+        if rid != last_room:
+            last_room = rid
+            if game.world and game.temporal.get("lighting") == "normal":
+                audio.start_hum()
+            else:
+                audio.stop_hum()
         particles.update(1.0 / config.TICK_HZ)
         frame = renderer.draw(game, particles, debug, flash)
         pygame.transform.scale(frame, (config.WINDOW_W, config.WINDOW_H), window)

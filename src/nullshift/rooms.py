@@ -70,10 +70,18 @@ def validate(data: dict, room_id: str = "?") -> None:
 
     spawn = _req(data, room_id, "spawn")
     check_tile("spawn", spawn["tx"], spawn["ty"])
-    exit_ = _req(data, room_id, "exit")
-    check_tile("exit", exit_["tx"], exit_["ty"])
-    if "next" not in exit_:
-        raise RoomError(f"room '{room_id}': exit missing 'next'")
+    for ex in _get_exits(data, room_id):
+        check_tile(f"exit '{ex.get('id', 'exit')}'", ex["tx"], ex["ty"])
+        if "next" not in ex:
+            raise RoomError(f"room '{room_id}': exit missing 'next'")
+        nxt = ex["next"]
+        if nxt != "END" and not os.path.exists(
+                os.path.join(paths.rooms_dir(), f"{nxt}.json")):
+            raise RoomError(f"room '{room_id}': exit next '{nxt}' has no room file")
+        for flag, want in ex.get("requires", {}).items():
+            if not isinstance(want, bool):
+                raise RoomError(
+                    f"room '{room_id}': exit requires flag '{flag}' must map to bool")
 
     seen_ids = set()
     for d in data.get("devices", []):
@@ -95,6 +103,28 @@ def validate(data: dict, room_id: str = "?") -> None:
             for link in d["links"]:
                 if link not in seen_ids:
                     raise RoomError(f"room '{room_id}': door '{d['id']}' links unknown '{link}'")
+        if d.get("type") == "console":
+            if "sets_flag" in d and not isinstance(d["sets_flag"], str):
+                raise RoomError(f"room '{room_id}': console '{d['id']}' sets_flag must be str")
+            for req in d.get("requires_on", []):
+                if req not in seen_ids:
+                    raise RoomError(
+                        f"room '{room_id}': console '{d['id']}' requires_on unknown '{req}'")
+    # optional metadata
+    lighting = data.get("lighting", "auto")
+    if lighting not in ("auto", "normal", "emergency", "low"):
+        raise RoomError(f"room '{room_id}': lighting must be auto/normal/emergency/low")
+    for s in data.get("signs", []):
+        check_tile(f"sign '{s.get('text', '?')}'", s["tx"], s["ty"], allow_wall=True)
+        if "text" not in s:
+            raise RoomError(f"room '{room_id}': sign missing 'text'")
+    for t in data.get("terminals", []):
+        for cond in t.get("variants", {}):
+            kind, _, _ = cond.partition(":")
+            if kind not in ("flag", "phase"):
+                raise RoomError(
+                    f"room '{room_id}': terminal '{t['id']}' variant condition "
+                    f"'{cond}' must be flag:NAME or phase:NAME")
     for hz in data.get("hazards", []):
         hid = _req(hz, room_id, "id")
         if hid in seen_ids:
@@ -106,6 +136,22 @@ def validate(data: dict, room_id: str = "?") -> None:
         tid = _req(t, room_id, "id")
         check_tile(f"terminal '{tid}'", t["tx"], t["ty"])
         _req(t, room_id, "text")
+
+
+def _get_exits(data: dict, room_id: str = "?") -> list:
+    """Normalize legacy single 'exit' or new 'exits' list -> list of dicts."""
+    if "exits" in data:
+        exits = data["exits"]
+        if not isinstance(exits, list) or not exits:
+            raise RoomError(f"room '{room_id}': 'exits' must be a non-empty list")
+        return exits
+    if "exit" in data:
+        return [data["exit"]]
+    raise RoomError(f"room '{room_id}': missing required field 'exit'/'exits'")
+
+
+def get_exits(data: dict) -> list:
+    return _get_exits(data, data.get("id", "?"))
 
 
 def is_wall(data: dict, tx: int, ty: int) -> bool:
