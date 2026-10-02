@@ -1,5 +1,16 @@
 # Roadmap — NULL//SHIFT
 
+## V1.0 scope (adopted Phase 4.5)
+
+**v1.0 = ACT I (WAKE) + ACT II (POWER)** — approximately 8 completed rooms
+within the existing 12-room ceiling. Establishes: protagonist, station,
+LIA, Tomas (asynchronous), the echo mechanic, environmental storytelling,
+controlled backtracking (after D016–D018 approval), first persistent
+state, first temporal-state ambiguity.
+
+**Future roadmap (explicitly out of v1.0):** ACT III (MAINTENANCE),
+ACT IV (NULL), instance-choice ending, station map UI.
+
 ## Gates
 
 ```text
@@ -8,8 +19,10 @@ GATE 1 — Game scope complete ............. DONE (2026-10-02)
 GATE 2 — Scope audit approved ............ DONE (2026-10-02, PASS WITH CONDITIONS)
 GATE 3 — Architecture approved ........... DONE (2026-10-02, PASS — see gate report in chat)
 GATE 4 — Vertical slice approved ......... DONE (2026-10-02, APPROVED WITH CONDITIONS —
-  condition: first-time-player validation via docs/PLAYTEST_PROTOCOL.md
-  before content production)
+  condition discharged by playtest, see docs/PLAYTEST_GATE4.md)
+GATE 4.5 — Creative direction + delta .... DONE (2026-10-02, design only —
+  D016/D017/D018 PROPOSED, awaiting Lucas's approval before implementation)
+GATE 5 — Core systems complete ........... PENDING (blocked on D016–D018 approval)
 GATE 5 — Core systems complete ........... PENDING (hazards, devices, audio, save impl)
 GATE 6 — Content complete (12 rooms) ..... PENDING
 GATE 7 — QA complete ..................... PENDING

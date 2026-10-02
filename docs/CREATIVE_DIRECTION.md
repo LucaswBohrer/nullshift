@@ -1,10 +1,30 @@
 # NULL//SHIFT — Direção Criativa v0.1
 
 **Autor:** Lucas (2026-10-02)
-**Status:** PROPOSTA — não definitiva, não adotada oficialmente.
-Documentos locked (GAME_SCOPE, ARCHITECTURE, DECISIONS) **não foram
-alterados** por esta proposta.
-**Review:** Muse, seção 2 deste documento.
+**Status:** ADOPTED (2026-10-02, Phase 4.5) — direção criativa oficial.
+NÃO altera automaticamente decisões técnicas locked; deltas arquiteturais
+em `docs/ARCHITECTURE_DELTA_4_5.md` + D016/D017/D018 (propostos, aguardando
+aprovação antes de qualquer implementação).
+**Review:** Muse, seção 2 deste documento (mantido como registro).
+
+## Consistency audit (Phase 4.5)
+
+Cada conceito marcado contra a arquitetura atual:
+
+- Fantasia do técnico / Elias Voss / descoberta junto: SUPPORTED NOW
+- NULL Research Station, Synchronization Array: SUPPORTED NOW (nomes/texto)
+- LIA inconsistente (falas condicionais): SUPPORTED NOW (terminal data)
+- Tomas assíncrono (mensagens/logs): SUPPORTED NOW — **constraint adotado:
+  v1.0 sem Tomas em tempo real**
+- Dr. Mara Vey via registros: SUPPORTED NOW
+- Storytelling ambiental (§11): SUPPORTED NOW
+- Mapa hub+spokes como grafo de salas: SUPPORTED NOW
+- "Por que existe um limite?" (D005 como plot): SUPPORTED NOW
+- Backtracking com a estação mudada: SUPPORTED AFTER D016–D018
+- Categoria TEMPORAL / máquina do §8: SUPPORTED AFTER D016–D018
+- Rogue echoes (§10): SUPPORTED AFTER D016–D018 (como entidades scriptadas)
+- Final com escolha de instância (§13): REQUIRES FUTURE DESIGN (Act IV)
+- Atos III–IV: FUTURE (fora da v1.0)
 
 ---
 

@@ -202,3 +202,150 @@ Supersede, never rewrite. New decisions get the next number.
 - **Consequences:** Simpler, testable (T10), no downside observed in the
   slice. If brush-through exits become a design problem in later rooms,
   revisit with a decision record — do not silently re-add the hold.
+
+---
+
+## D016 — Controlled backtracking & persistent world state
+
+- **Status:** PROPOSED (Phase 4.5) — requires Lucas's approval before any
+  implementation. Does not alter locked behavior until approved.
+- **Context:** CREATIVE_DIRECTION.md (adopted) requires the station to
+  feel like one coherent explorable place with purposeful backtracking
+  ("return and the station has changed"). The locked architecture
+  (D006, ARCHITECTURE.md §4/§6, test T8) clears echoes on room transition
+  and resets rooms to entry snapshots, with nothing persistent except
+  unlocks/stats. Unrestricted persistent simulation is explicitly NOT the
+  goal — the target is ~80% perceived change via presentation/scripted
+  state, ~20% via genuine persistent gameplay state.
+- **Decision:** introduce a **Progression** state object, owned by `Game`
+  (not by `World`/the cycle sim), holding a flat dict of persistent
+  flags, e.g. `{"power_restored": true, "access_level": 2,
+  "door_lab_unlocked": true, "met_lia": true}`. Rules:
+  - **Ownership:** `Game` owns Progression; `World` receives a read-only
+    view at room build/entry. The cycle sim can never write it.
+  - **Reset semantics:** cycle reset and death NEVER touch persistent
+    state. Only explicit player actions (or scripted story beats) set
+    flags, via `Game` — never via echo playback (see D017 invariant).
+  - **Room transition semantics:** entering a room rebuilds it from
+    (room data + persistent flags + TEMPORAL recompute); echoes and
+    recordings are still cleared (T8 semantics preserved).
+  - **Entry snapshot:** persistent flags may *influence* the room's entry
+    snapshot (e.g. a permanently unlocked door starts open), but the
+    flags themselves are never part of the snapshot. Snapshot/restore
+    continues to cover RESETTABLE only.
+  - **Serialization:** the flags dict is JSON-native; it becomes part of
+    the save spec (extends D003/D014, no save code yet).
+  - **Determinism:** flags change only via explicit discrete actions;
+    no randomness, no time dependence.
+- **Explicit answers:**
+  - *Cycle reset → persistent state?* Untouched.
+  - *Leave and return?* Room rebuilt; persistent effects visible;
+    echoes cleared; recordings cleared.
+  - *Death?* Like reset; persistent untouched.
+  - *What may influence the entry snapshot?* Persistent flags (as initial
+    conditions), TEMPORAL recompute (D017). Nothing else.
+  - *What may never enter an echo recording?* Persistent flags,
+    progression events, TEMPORAL values — recordings capture only
+    per-tick frames + in-cycle device events.
+- **Consequences:** enables backtracking with real consequences without
+  a persistent simulation; T8 must be extended (not rewritten) to assert
+  persistent flags survive transitions; new tests listed in
+  ARCHITECTURE_DELTA_4_5.md §test impact. No implementation until
+  approved.
+
+## D017 — TEMPORAL state category
+
+- **Status:** PROPOSED (Phase 4.5) — requires approval. Extends (does not
+  replace) the RESETTABLE/PERSISTENT/SESSION/DERIVED classification.
+- **Context:** The creative direction needs state that "depends on the
+  temporal phase" (CREATIVE_DIRECTION.md §8): machines operable only when
+  story conditions hold, terminal text variants, phase-dependent
+  presentation. Calling everything "persistent" would wrongly make it
+  writable by gameplay; calling it "resettable" would wrongly make the
+  sim mutate it.
+- **Decision:** TEMPORAL state is **read-only during a cycle**, computed
+  once at room entry as a pure function of
+  `(persistent flags, narrative phase, visit counters)`. Examples: a
+  machine's *availability* (operable iff `power_restored`), a terminal's
+  text variant for the current act, alarm lighting state.
+- **The ten questions:**
+  1. *TEMPORAL vs RESETTABLE?* The sim may mutate RESETTABLE (and the
+     snapshot restores it). The sim may never mutate TEMPORAL.
+  2. *Survives cycle reset?* Vacuously yes: reset restores the
+     room-entry computed value, which the sim could not have changed.
+  3. *Survives room transition?* It is recomputed on every room entry —
+     consistent by construction, stored nowhere.
+  4. *Observed by an echo?* Echoes don't observe state; but an echo's
+     recorded events may target a TEMPORAL-gated device, since the gate
+     was fixed at entry and is constant for the cycle.
+  5. *Created/modified by an echo?* **Never — invariant.** Only the
+     living player's explicit actions (or scripted beats) may change
+     persistent inputs; TEMPORAL itself is never written, only recomputed.
+  6. *Affects future cycles?* Constant within a room across cycles;
+     changes only when its persistent inputs change.
+  7. *Deterministic?* Yes — pure function of its inputs.
+  8. *Serialized?* Never directly.
+  9. *In save data?* No — its inputs (flags, phase, counters) are.
+  10. *Reconstructed after load?* Recomputed at room entry from loaded
+      inputs. Nothing to migrate.
+- **Concrete test case** (machine operated by an echo, player uses the
+  result): the machine's *in-cycle* operating state is **RESETTABLE**
+  (echo toggles it, player benefits this cycle, reset clears it). The
+  machine's *availability* is **TEMPORAL** (f(persistent flags)). If the
+  story needs the repair to be permanent, that is a **PERSISTENT** flag
+  set only by the player's own explicit action — never by echo playback.
+- **Classification rule for future developers:** "Can the cycle sim
+  mutate it?" → RESETTABLE. "Is it a pure function of progression at
+  entry?" → TEMPORAL. "Must it survive resets as stored data?" →
+  PERSISTENT. "Cleared on room exit?" → SESSION. "Recomputable cache?" →
+  DERIVED. If none fit, the design is wrong — do not invent a sixth
+  category silently.
+- **Consequences:** gives the §8 "temporal exploration" a precise
+  implementation shape without breaking determinism; terminal/text
+  variants and phase presentation become TEMPORAL data, not code
+  branches.
+
+## D018 — Scripted temporal entities ("rogue echoes")
+
+- **Status:** PROPOSED (Phase 4.5) — requires approval. No implementation.
+- **Context:** CREATIVE_DIRECTION.md §10 (adopted): an echo that continues
+  past its recording, enters rooms the player never visited, then
+  vanishes — `ECHO TERMINATED / SOURCE: UNKNOWN`. If player recordings
+  could spontaneously deviate, determinism (D004) and the entire echo
+  test suite (T4, T7, T9) become meaningless.
+- **Decision:** introduce a separate runtime category, **scripted
+  temporal entity**, disjoint from player echoes:
+  - **Player echo:** immutable recording, deterministic playback, fully
+    testable (unchanged, D004 stands unweakened).
+  - **Scripted temporal entity:** authored behavior (a tick script from
+    room/story data, *not* derived from any player recording); may
+    visually resemble an echo (same sprite treatment — the ambiguity is
+    the point); deterministic by authorship.
+  - The player is never told the distinction. The engine always knows it.
+- **Rules:**
+  - **Lifecycle:** spawned by room/story data (trigger: entry count,
+    flag, script point); despawned by script end or room exit. **Survives
+    cycle resets within the room** (SESSION-like; this is the horror —
+    resetting doesn't banish it). Cleared on room transition.
+  - **Identity:** own id; never references a player recording; cannot
+    read or mutate recordings.
+  - **Rendering:** echo visual treatment (cyan, scanlines).
+  - **Collision:** none with the player (as echoes).
+  - **Interaction:** may trigger plates/consoles *per its authored
+    script*; cannot be "used" by the player; never triggers exits.
+  - **Hazards:** immune (it is residue, not matter) — documented, not
+    emergent.
+  - **Targeting:** turrets never target it (not in the D010 candidate
+    set).
+  - **Rooms:** room-local, like echoes.
+  - **3-echo limit:** does NOT count toward the FIFO cap (the cap is on
+    player recordings, D005 unchanged).
+  - **Determinism/testing:** the authored tick script is fixed data;
+    tests assert exact positions/events per tick, exactly like echo
+    fidelity tests. Player-echo immutability is asserted separately.
+- **Implementation note (future):** reuse the `Echo` playback machinery
+  over an *authored* Recording built from data — shared code path,
+  inherited determinism. No new playback system.
+- **Consequences:** the §10 horror becomes implementable and testable
+  without touching the player-echo contract; QA can distinguish "scripted
+  entity misbehaving" (data bug) from "echo misbehaving" (engine bug).
