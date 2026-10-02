@@ -5,43 +5,53 @@ A 2D top-down action / survival puzzle game with a temporal-echo mechanic.
 You are a maintenance technician trapped in a failing automated research
 station. Every cycle is recorded. When the cycle resets, an echo of your
 previous self replays your actions — plan, reset, and cooperate with your
-own past to open paths, run machines, and survive the station's defenses.
+own past to open paths and solve puzzles.
 
-**Status:** pre-implementation. Phase 1 (game scope) in progress.
-See `docs/GAME_SCOPE.md` and `docs/SCOPE_AUDIT.md`. No gameplay code exists yet
-by design — implementation starts only after the scope audit gate passes.
+**Status: Gate 4 — Vertical Slice** (rooms 1.1 and 1.2 only).
+First-time-player playtest is still **pending** — see
+`docs/PLAYTEST_PROTOCOL.md`. No content beyond the slice exists yet.
 
-## Project layout
+## Run on Windows
 
-```text
-nullshift/
-├── docs/        # source of truth: scope, audit, decisions, architecture, build
-├── src/         # game source (Python/Pygame) — NOT STARTED
-├── assets/      # pixel art, audio — NOT STARTED
-├── tools/       # build/dev utilities — NOT STARTED
-└── dist/        # Windows release output (generated, git-ignored)
-```
-
-## Documentation (read in this order)
-
-1. `docs/GAME_SCOPE.md` — what the game is, systems inventory, world, narrative
-2. `docs/SCOPE_AUDIT.md` — formal audit findings and gate status
-3. `docs/DECISIONS.md` — architectural decision records (D001–D008)
-4. `docs/TECHNICAL_REQUIREMENTS.md` — platform, performance, constraints
-5. `docs/ARCHITECTURE.md` — technical architecture (DRAFT until gate 3)
-6. `docs/BUILD.md` — reproducible Windows build pipeline
-7. `docs/ROADMAP.md` — phases, gates, weekend schedule
-
-## Build (once implemented)
+Requirements: **Python 3.12+** (64-bit), Windows 10/11.
 
 ```bat
-REM from a Windows machine with Python 3.12+
+git clone https://github.com/LucaswBohrer/nullshift.git
+cd nullshift
+python -m venv .venv
+.venv\Scripts\activate
 pip install -r requirements.txt
-python -m PyInstaller build.spec
-REM -> dist\NULLSHIFT\NULLSHIFT.exe
+set PYTHONPATH=src
+python -m nullshift
 ```
 
-Full pipeline: `docs/BUILD.md`.
+Controls: move `WASD`/`Arrows`, interact `E`, reset cycle `R`,
+pause `Esc`, mute `M`.
+
+## Tests
+
+```bat
+.venv\Scripts\activate
+pip install -r requirements-dev.txt
+set PYTHONPATH=src
+python -m pytest tests -q
+python tools\validate_rooms.py
+```
+
+31 tests, all passing at Gate 4.
+
+## Windows executable
+
+**Not yet validated.** The pipeline (`tools\build.ps1`:
+test → validate → PyInstaller one-dir → smoke → zip) is defined in
+`docs/BUILD.md` but has never run on a Windows machine. Do not claim the
+`.exe` works until it has been built and smoke-tested there.
+
+## Docs
+
+Read in order: `docs/GAME_SCOPE.md` → `docs/SCOPE_AUDIT.md` →
+`docs/DECISIONS.md` → `docs/ARCHITECTURE.md` (locked) →
+`docs/BUILD.md` → `docs/ROADMAP.md`.
 
 ## License
 

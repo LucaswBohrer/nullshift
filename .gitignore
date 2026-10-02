@@ -5,10 +5,9 @@ __pycache__/
 .venv/
 venv/
 
-# PyInstaller
+# PyInstaller (generated output only; build.spec itself is tracked source)
 build/
 dist/
-*.spec
 
 # Saves & local config (generated at runtime)
 saves/
