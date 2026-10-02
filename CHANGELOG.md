@@ -24,10 +24,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - No gameplay implementation yet. Implementation begins only after the scope
   audit gate (GATE 2) is explicitly approved.
 
-## [0.1.0] — Vertical slice (planned)
+## [0.1.0] — Vertical slice (2026-10-02)
 
-- Player movement + collision, temporal cycle, action recording, reset,
-  single-echo playback, one puzzle room demonstrating the echo mechanic.
+- Runtime shell: Pygame fixed-60 Hz loop, state machine
+  (TITLE/PLAYING/PAUSED/SECTORCARD/TERMINAL/GAMECOMPLETE), input, renderer
+  (640×360 ×2), procedural SFX (12 sounds, silent fallback), debug overlay.
+- Temporal core per locked architecture: tick recording, room-entry
+  snapshot reset, echo playback (tick-for-tick), FIFO cap 3, death_tick
+  vanishing echoes, per-room temporal state.
+- Rooms 1.1 ("Wake") + 1.2 ("First Debt") as validated JSON data; zero
+  room-specific code.
+- Tests: 31 green (T1–T10); `tools/validate_rooms.py`; `--smoke` boot check.
+- D015: exit pad fires on overlap (30-tick hold dropped as unreachable).
+- NOT validated: Windows PyInstaller build (Linux sandbox), real-hardware
+  FPS, first-time-player comprehension (see docs/PLAYTEST_PROTOCOL.md).
 
 ## [1.0.0] — Weekend release (planned)
 

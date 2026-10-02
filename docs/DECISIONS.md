@@ -187,3 +187,18 @@ Supersede, never rewrite. New decisions get the next number.
   with core systems at GATE 5. The slice uses in-memory unlock flags.
 - **Consequences:** Slice stays minimal; save module has a frozen spec
   to implement against later. No save code exists until GATE 5.
+
+---
+
+## D015 — Exit pad triggers on overlap (supersedes 30-tick hold)
+
+- **Status:** ACCEPTED (GATE 4)
+- **Context:** ARCHITECTURE.md §8 specified a 30-tick (0.5 s) overlap hold
+  on exit pads as "anti-brush". Implementation revealed the hold is
+  unreachable by normal play: a walking player crosses the 16 px pad in
+  ~9 ticks, so the exit could never fire while walking through it.
+- **Decision:** Exit pads fire on the first overlap tick (player only;
+  echoes never trigger). The hold concept is dropped, not tuned.
+- **Consequences:** Simpler, testable (T10), no downside observed in the
+  slice. If brush-through exits become a design problem in later rooms,
+  revisit with a decision record — do not silently re-add the hold.

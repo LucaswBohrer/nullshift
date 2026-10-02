@@ -298,8 +298,9 @@ device = {
   device states each tick — derived, never stored.
 - Consoles: toggle on interact; echo re-fires via recorded events (§4.2).
 - Terminals: overlay text card; sim pauses (like PAUSED) until dismissed.
-- ExitPad: player-only overlap for 30 ticks (0.5 s, anti-brush) → room
-  transition.
+- ExitPad: player-only overlap → room transition, immediate (D015;
+  the 30-tick hold was dropped: a walking player crosses the pad in ~9
+  ticks, making the hold unreachable).
 
 ---
 

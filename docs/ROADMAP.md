@@ -7,7 +7,9 @@ GATE 0 — Discovery complete .............. DONE (2026-10-02)
 GATE 1 — Game scope complete ............. DONE (2026-10-02)
 GATE 2 — Scope audit approved ............ DONE (2026-10-02, PASS WITH CONDITIONS)
 GATE 3 — Architecture approved ........... DONE (2026-10-02, PASS — see gate report in chat)
-GATE 4 — Vertical slice approved ......... PENDING (rooms 1.1–1.2; comprehension criterion)
+GATE 4 — Vertical slice approved ......... DONE (2026-10-02, APPROVED WITH CONDITIONS —
+  condition: first-time-player validation via docs/PLAYTEST_PROTOCOL.md
+  before content production)
 GATE 5 — Core systems complete ........... PENDING (hazards, devices, audio, save impl)
 GATE 6 — Content complete (12 rooms) ..... PENDING
 GATE 7 — QA complete ..................... PENDING
