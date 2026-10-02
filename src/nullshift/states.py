@@ -38,7 +38,8 @@ class Game:
         # D016: persistent progression, owned by Game
         self.progression = Progression()
         # D017: TEMPORAL presentation of the current room
-        self.temporal = {"lighting": "emergency", "terminal_texts": {}}
+        self.temporal = {"lighting": "emergency", "terminal_texts": {},
+                         "sign_texts": {}}
         # narrative presentation
         self.lia_queue = []          # pending LIA lines (dicts)
         self.lia_text = ""

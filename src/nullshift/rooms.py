@@ -118,6 +118,12 @@ def validate(data: dict, room_id: str = "?") -> None:
         check_tile(f"sign '{s.get('text', '?')}'", s["tx"], s["ty"], allow_wall=True)
         if "text" not in s:
             raise RoomError(f"room '{room_id}': sign missing 'text'")
+        for cond in s.get("variants", {}):
+            kind, _, _ = cond.partition(":")
+            if kind not in ("flag", "phase"):
+                raise RoomError(
+                    f"room '{room_id}': sign variant condition "
+                    f"'{cond}' must be flag:NAME or phase:NAME")
     for t in data.get("terminals", []):
         for cond in t.get("variants", {}):
             kind, _, _ = cond.partition(":")

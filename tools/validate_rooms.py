@@ -79,6 +79,15 @@ def check_progression_refs(data: dict) -> None:
                 raise rooms.RoomError(
                     f"room '{rid}': terminal '{t['id']}' variant references "
                     f"unknown phase '{name}'")
+    for i, sg in enumerate(data.get("signs", [])):
+        for cond in sg.get("variants", {}):
+            kind, _, name = cond.partition(":")
+            if kind == "flag" and name not in KNOWN_FLAGS:
+                raise rooms.RoomError(
+                    f"room '{rid}': sign {i} variant references unknown flag '{name}'")
+            if kind == "phase" and name not in KNOWN_PHASES:
+                raise rooms.RoomError(
+                    f"room '{rid}': sign {i} variant references unknown phase '{name}'")
     if "set_phase" in data and data["set_phase"] not in KNOWN_PHASES:
         raise rooms.RoomError(f"room '{rid}': set_phase '{data['set_phase']}' unknown")
 

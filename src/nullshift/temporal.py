@@ -40,4 +40,13 @@ def compute(room_data: dict, progression) -> dict:
             if _condition_matches(cond, progression):
                 text = variant
         terminal_texts[t["id"]] = text
-    return {"lighting": lighting, "terminal_texts": terminal_texts}
+    # sign variants: same mechanism, keyed by sign index
+    sign_texts = {}
+    for i, sg in enumerate(room_data.get("signs", [])):
+        text = sg["text"]
+        for cond, variant in sg.get("variants", {}).items():
+            if _condition_matches(cond, progression):
+                text = variant
+        sign_texts[i] = text
+    return {"lighting": lighting, "terminal_texts": terminal_texts,
+            "sign_texts": sign_texts}

@@ -88,7 +88,10 @@
     {
       "tx": 34,
       "ty": 9,
-      "text": "RELAY \u2014 NO POWER"
+      "text": "RELAY \u2014 NO POWER",
+      "variants": {
+        "flag:power_restored": "RELAY \u2014 OPEN"
+      }
     }
   ],
   "barks": [

@@ -68,3 +68,11 @@ def test_world_exposes_temporal_terminal_text():
     g.progression.set_flag("power_restored")
     g.enter_room("hub")
     assert "CURRENT STAFF: 0" in g.world.terminal_texts["t_hub_staff"]
+
+
+def test_sign_variants_follow_flag():
+    data = rooms.load("hub")
+    p = Progression()
+    assert temporal.compute(data, p)["sign_texts"][1] == "RELAY — NO POWER"
+    p.set_flag("power_restored")
+    assert temporal.compute(data, p)["sign_texts"][1] == "RELAY — OPEN"

@@ -75,9 +75,11 @@ class Renderer:
         for pad in w.exits:
             locked = not pad.unlocked(game.progression)
             blit_at(sprites.prop("exit", "locked" if locked else None), pad.tx, pad.ty)
-        # station signage (data-driven text plates)
-        for sign in data.get("signs", []):
-            t = self.tiny.render(sign["text"], True, (150, 160, 190))
+        # station signage (data-driven text plates; TEMPORAL variants)
+        sign_texts = game.temporal.get("sign_texts", {})
+        for i, sign in enumerate(data.get("signs", [])):
+            text = sign_texts.get(i, sign["text"])
+            t = self.tiny.render(text, True, (150, 160, 190))
             sx = ox + sign["tx"] * T + T // 2 - t.get_width() // 2
             sy = oy + sign["ty"] * T + T // 2 - t.get_height() // 2
             s.blit(t, (sx, sy))
@@ -166,7 +168,7 @@ class Renderer:
             self._center_lines(s, ["PAUSED", "", "ESC resume"], self.big, self.font)
         elif st == "SECTORCARD":
             self._dim(s)
-            self._center_lines(s, [game.pending_card], self.big, self.font)
+            self._center_lines(s, game.pending_card.split("\n"), self.big, self.font)
         elif st == "TERMINAL":
             self._dim(s)
             self._center_lines(s, ["TERMINAL", "", game.terminal_text,
@@ -182,15 +184,17 @@ class Renderer:
 
     def _lia_card(self, s, text: str):
         """LIA speaks through a distinct cyan card — not a terminal."""
+        lines = text.split("\n")
         W, H = config.INTERNAL_W, config.INTERNAL_H
-        bw, bh = 420, 150
+        bw = 420
+        bh = 66 + 18 * len(lines)
         bx, by = W // 2 - bw // 2, H // 2 - bh // 2
         pygame.draw.rect(s, (6, 18, 24), (bx, by, bw, bh))
         pygame.draw.rect(s, (64, 224, 255), (bx, by, bw, bh), 2)
         head = self.font.render("LIA // STATION INTELLIGENCE", True, (64, 224, 255))
         s.blit(head, (bx + 14, by + 10))
         y = by + 36
-        for line in text.split("\n"):
+        for line in lines:
             t = self.font.render(line, True, (190, 225, 235))
             s.blit(t, (bx + 14, y))
             y += 18
