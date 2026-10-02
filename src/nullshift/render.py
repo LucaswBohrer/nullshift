@@ -1,4 +1,6 @@
 """Renderer: 640x360 internal surface, integer x2 scale, layered draw."""
+import math
+
 import pygame
 
 from nullshift import config, rooms, sprites, strings
@@ -10,6 +12,7 @@ class Renderer:
     def __init__(self):
         self.surf = pygame.Surface((config.INTERNAL_W, config.INTERNAL_H))
         self.font = pygame.font.SysFont("monospace", 13)
+        self.tiny = pygame.font.SysFont("monospace", 9)
         self.big = pygame.font.SysFont("monospace", 28, bold=True)
         self._vignette = self._make_vignette()
 
@@ -56,7 +59,11 @@ class Renderer:
             if dev.kind == "pressure_plate":
                 blit_at(sprites.prop("plate", dev.pressed), dev.tx, dev.ty)
             elif dev.kind == "console":
-                blit_at(sprites.prop("console", dev.on), dev.tx, dev.ty)
+                if dev.sets_flag:
+                    blit_at(sprites.prop("console", "power_on" if dev.on else "power"),
+                            dev.tx, dev.ty)
+                else:
+                    blit_at(sprites.prop("console", dev.on), dev.tx, dev.ty)
             elif dev.kind == "door":
                 if not dev.open:
                     for dx in range(dev.tw):
@@ -64,9 +71,16 @@ class Renderer:
                             blit_at(sprites.prop("door"), dev.tx + dx, dev.ty + dy)
             elif dev.kind == "terminal":
                 blit_at(sprites.prop("terminal"), dev.tx, dev.ty)
-        # exit pad
-        ex = w.exit
-        s.blit(sprites.prop("exit"), (ox + ex.tx * T, oy + ex.ty * T))
+        # exit pads (locked ones render red + crossed)
+        for pad in w.exits:
+            locked = not pad.unlocked(game.progression)
+            blit_at(sprites.prop("exit", "locked" if locked else None), pad.tx, pad.ty)
+        # station signage (data-driven text plates)
+        for sign in data.get("signs", []):
+            t = self.tiny.render(sign["text"], True, (150, 160, 190))
+            sx = ox + sign["tx"] * T + T // 2 - t.get_width() // 2
+            sy = oy + sign["ty"] * T + T // 2 - t.get_height() // 2
+            s.blit(t, (sx, sy))
         # hazards
         for hz in w.hazards:
             if hz.kind == "drone":
@@ -82,20 +96,42 @@ class Renderer:
                 elif hz.warning:
                     if (pygame.time.get_ticks() // 120) % 2 == 0:
                         pygame.draw.rect(s, (255, 200, 60), r, 1)
-        # echoes then player (player on top)
+        # echoes then player (player on top); echoes shimmer temporally
+        tick = pygame.time.get_ticks()
         for e in w.echoes:
             if e.live:
-                s.blit(sprites.player_frame(e.facing, echo=True),
-                       (ox + e.rect.x, oy + e.rect.y))
+                ex, ey = ox + e.rect.x, oy + e.rect.y
+                if (tick // 90) % 2 == 0:
+                    s.blit(sprites.echo_ghost(), (ex + 1, ey))
+                s.blit(sprites.player_frame(e.facing, echo=True), (ex, ey))
         p = w.player
         s.blit(sprites.player_frame(p.facing), (ox + p.rect.x, oy + p.rect.y))
         # projectiles
         for pr in w.projectiles:
             pygame.draw.circle(s, (255, 220, 80),
                                (ox + int(pr["x"]), oy + int(pr["y"])), 3)
+        self._draw_lighting(s, game)
+
+    def _draw_lighting(self, s, game):
+        """D017 TEMPORAL presentation overlay (pure function of game.temporal)."""
+        light = game.temporal.get("lighting", "emergency")
+        W, H = config.INTERNAL_W, config.INTERNAL_H
+        if light == "emergency":
+            pulse = 14 + int(7 * math.sin(pygame.time.get_ticks() / 350.0))
+            ov = pygame.Surface((W, H), pygame.SRCALPHA)
+            ov.fill((150, 30, 30, pulse))
+            s.blit(ov, (0, 0))
+        elif light == "low":
+            ov = pygame.Surface((W, H), pygame.SRCALPHA)
+            ov.fill((0, 0, 0, 78))
+            s.blit(ov, (0, 0))
 
     def _draw_hud(self, s, game):
         w = game.world
+        # room display name (fiction-first, not numeric)
+        name = w.data.get("display_name", w.room_id)
+        t = self.font.render(name, True, (190, 200, 220))
+        s.blit(t, (12, 8))
         # cycle timer bar
         frac = 1.0 - w.cycle_tick / config.CYCLE_TICKS
         bx, by, bw, bh = config.INTERNAL_W // 2 - 100, 8, 200, 8
@@ -106,8 +142,17 @@ class Renderer:
         for i in range(config.MAX_ECHOES):
             c = (64, 224, 255) if i < len(w.echoes) else (40, 46, 62)
             pygame.draw.rect(s, c, (bx + bw + 12 + i * 12, by, 8, 8))
-        # objective
-        obj = strings.OBJECTIVES.get(w.room_id, "")
+        # reset cycle text (continuity between cycles)
+        if game.reset_text:
+            rt = self.font.render(game.reset_text[0], True, (120, 200, 230))
+            s.blit(rt, (config.INTERNAL_W // 2 - rt.get_width() // 2, by + 14))
+        # Elias subtitle (non-blocking characterization)
+        if game.subtitle:
+            st = self.font.render(game.subtitle[0], True, (255, 200, 130))
+            s.blit(st, (config.INTERNAL_W // 2 - st.get_width() // 2,
+                        config.INTERNAL_H - 42))
+        # objective (room data first, legacy strings fallback)
+        obj = w.data.get("objective") or strings.OBJECTIVES.get(w.room_id, "")
         if obj:
             t = self.font.render(obj, True, (170, 180, 200))
             s.blit(t, (12, config.INTERNAL_H - 22))
@@ -126,11 +171,31 @@ class Renderer:
             self._dim(s)
             self._center_lines(s, ["TERMINAL", "", game.terminal_text,
                                    "", "[E] close"], self.big, self.font)
+        elif st == "LIA":
+            self._dim(s)
+            self._lia_card(s, game.lia_text)
         elif st == "GAMECOMPLETE":
             self._dim(s)
             lines = strings.SLICE_COMPLETE + ["",
                 f"cycles: {game.stats['cycles']}  deaths: {game.stats['deaths']}"]
             self._center_lines(s, lines, self.big, self.font)
+
+    def _lia_card(self, s, text: str):
+        """LIA speaks through a distinct cyan card — not a terminal."""
+        W, H = config.INTERNAL_W, config.INTERNAL_H
+        bw, bh = 420, 150
+        bx, by = W // 2 - bw // 2, H // 2 - bh // 2
+        pygame.draw.rect(s, (6, 18, 24), (bx, by, bw, bh))
+        pygame.draw.rect(s, (64, 224, 255), (bx, by, bw, bh), 2)
+        head = self.font.render("LIA // STATION INTELLIGENCE", True, (64, 224, 255))
+        s.blit(head, (bx + 14, by + 10))
+        y = by + 36
+        for line in text.split("\n"):
+            t = self.font.render(line, True, (190, 225, 235))
+            s.blit(t, (bx + 14, y))
+            y += 18
+        foot = self.font.render("[E] acknowledge", True, (120, 140, 155))
+        s.blit(foot, (bx + 14, by + bh - 24))
 
     def _dim(self, s):
         d = pygame.Surface((config.INTERNAL_W, config.INTERNAL_H), pygame.SRCALPHA)

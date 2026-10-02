@@ -14,7 +14,7 @@ def test_room_11_loads():
 def test_room_12_loads():
     data = rooms.load("1.2")
     assert data["id"] == "1.2"
-    assert data["exit"]["next"] == "END"
+    assert data["exit"]["next"] == "hub"  # Phase 5: 1.2 flows into the hub
     assert any(d["type"] == "pressure_plate" for d in data["devices"])
 
 

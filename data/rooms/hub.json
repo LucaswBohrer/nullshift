@@ -1,8 +1,10 @@
 {
   "format_version": 1,
-  "id": "1.1",
-  "name": "Wake",
+  "id": "hub",
+  "name": "Hub",
   "sector": 1,
+  "display_name": "CENTRAL HUB",
+  "area": "HUB",
   "tint": "blue",
   "grid": {
     "w": 40,
@@ -20,16 +22,16 @@
       "#......................................#",
       "#......................................#",
       "#......................................#",
+      "#.........##...............##..........#",
+      "#.........##...............##..........#",
       "#......................................#",
       "#......................................#",
       "#......................................#",
       "#......................................#",
       "#......................................#",
       "#......................................#",
-      "#......................................#",
-      "#......................................#",
-      "#......................................#",
-      "#......................................#",
+      "#.........##...............##..........#",
+      "#.........##...............##..........#",
       "#......................................#",
       "#......................................#",
       "#......................................#",
@@ -42,54 +44,59 @@
     "tx": 2,
     "ty": 11
   },
-  "devices": [
+  "exits": [
     {
-      "id": "con1",
-      "type": "console",
+      "id": "exit_north",
       "tx": 20,
-      "ty": 11
+      "ty": 1,
+      "next": "power"
     },
     {
-      "id": "door1",
-      "type": "door",
-      "tx": 30,
-      "ty": 10,
-      "tw": 1,
-      "th": 2,
-      "links": [
-        "con1"
-      ],
-      "mode": "any"
+      "id": "exit_east",
+      "tx": 38,
+      "ty": 11,
+      "next": "relay",
+      "requires": {
+        "power_restored": true
+      }
     }
   ],
+  "devices": [],
   "terminals": [
     {
-      "id": "t11",
+      "id": "t_hub_staff",
       "tx": 6,
-      "ty": 11,
-      "text": "CUSTODIAN: Cycle 40s. All actions recorded. [R] forces a reset."
+      "ty": 5,
+      "text": "STATION TERMINAL \u2014 CREW\n\nSTAFF COUNT: 14\n\nSTATUS: nominal",
+      "variants": {
+        "flag:power_restored": "STATION TERMINAL \u2014 CREW\n\nSTAFF COUNT: 14\nCURRENT STAFF: 0\n\nSTATUS: incident"
+      }
+    },
+    {
+      "id": "t_hub_tomas",
+      "tx": 33,
+      "ty": 17,
+      "text": "MAINTENANCE NOTE \u2014 T. REED\n\nRelay's been flaky for weeks. If the\nlights die, the manual breaker is in\nPOWER. Needs two hands. You'll figure\nit out. \u2014 T.R."
     }
   ],
-  "hazards": [],
-  "exit": {
-    "tx": 36,
-    "ty": 11,
-    "next": "1.2"
-  },
-  "display_name": "WAKE \u2014 Crew Quarters",
-  "area": "WAKE",
   "signs": [
     {
       "tx": 18,
       "ty": 0,
-      "text": "CREW QUARTERS"
+      "text": "CENTRAL HUB"
+    },
+    {
+      "tx": 34,
+      "ty": 9,
+      "text": "RELAY \u2014 NO POWER"
     }
   ],
   "barks": [
     {
-      "id": "bark_11_enter",
+      "id": "bark_hub_enter",
       "trigger": "enter",
-      "text": "Crew quarters. Empty. Of course it's empty."
+      "text": "Central hub. Somebody left in a hurry."
     }
-  ]
+  ],
+  "objective": "Reach the POWER relay room to the north."
 }

@@ -81,6 +81,22 @@
   "exit": {
     "tx": 36,
     "ty": 11,
-    "next": "END"
-  }
+    "next": "hub"
+  },
+  "display_name": "WAKE \u2014 Service Corridor",
+  "area": "WAKE",
+  "signs": [
+    {
+      "tx": 18,
+      "ty": 0,
+      "text": "SERVICE CORRIDOR"
+    }
+  ],
+  "barks": [
+    {
+      "id": "bark_12_enter",
+      "trigger": "enter",
+      "text": "Service corridor. The echo got me through. Good to know."
+    }
+  ]
 }

@@ -67,6 +67,12 @@ def player_frame(facing: int, echo: bool = False):
     return _cache[key]
 
 
+def echo_ghost():
+    if ("ghost",) not in _cache:
+        _cache[("ghost",)] = _make_echo_ghost()
+    return _cache[("ghost",)]
+
+
 def tile(kind: str):
     key = ("tile", kind)
     if key not in _cache:
@@ -97,6 +103,16 @@ def _make_console(on: bool):
     return s
 
 
+def _make_power_console(on: bool):
+    """D016 flag-setting console: station-power hardware, bolt glyph."""
+    s = _surf()
+    pygame.draw.rect(s, (52, 46, 30), (1, 3, 14, 13), border_radius=2)
+    pygame.draw.rect(s, (90, 78, 40), (1, 3, 14, 13), 1, border_radius=2)
+    col = (255, 210, 80) if on else (110, 92, 46)
+    pygame.draw.polygon(s, col, [(9, 2), (6, 8), (8, 8), (7, 14), (11, 6), (9, 6)])
+    return s
+
+
 def _make_door():
     s = _surf()
     for i in range(0, 16, 4):  # hazard stripes
@@ -109,6 +125,21 @@ def _make_exit():
     s = _surf()
     pygame.draw.rect(s, (20, 60, 70), (1, 1, 14, 14), 1)
     pygame.draw.polygon(s, CYAN, [(6, 4), (10, 8), (6, 12)])
+    return s
+
+
+def _make_exit_locked():
+    s = _surf()
+    pygame.draw.rect(s, (70, 26, 26), (1, 1, 14, 14), 1)
+    pygame.draw.polygon(s, (150, 70, 70), [(6, 4), (10, 8), (6, 12)])
+    pygame.draw.line(s, (255, 80, 80), (3, 3), (12, 12), 2)
+    return s
+
+
+def _make_echo_ghost():
+    """Translucent cyan silhouette used for the temporal shimmer."""
+    s = _surf()
+    pygame.draw.rect(s, (64, 224, 255, 70), (3, 2, 10, 12), border_radius=3)
     return s
 
 
@@ -143,11 +174,12 @@ def prop(kind: str, variant=None):
         if kind == "plate":
             _cache[key] = _make_plate_pressed() if variant else _make_plate()
         elif kind == "console":
-            _cache[key] = _make_console(bool(variant))
+            _cache[key] = _make_console(bool(variant)) if variant != "power" \
+                and variant != "power_on" else _make_power_console(variant == "power_on")
         elif kind == "door":
             _cache[key] = _make_door()
         elif kind == "exit":
-            _cache[key] = _make_exit()
+            _cache[key] = _make_exit_locked() if variant == "locked" else _make_exit()
         elif kind == "terminal":
             _cache[key] = _make_terminal()
         elif kind == "drone":
